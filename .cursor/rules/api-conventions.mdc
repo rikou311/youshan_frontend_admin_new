@@ -1,0 +1,20 @@
+---
+description: API 请求与封装规范
+globs: "api/**/*,utils/request.ts"
+alwaysApply: false
+---
+
+# API 规范
+
+- 统一通过 `utils/request.ts`（或 `api/request.ts`）封装的 axios 实例发请求
+- 按业务域拆分 `api/` 模块（如 `api/user.ts`），禁止在组件内直接写 URL
+- 响应类型统一定义，拦截器处理 token、401 跳转与全局错误提示（`ElMessage`）
+
+```typescript
+// api/user.ts
+export function getUserList(params: UserListParams) {
+  return request.get<PageResult<UserItem>>('/users', { params })
+}
+```
+
+- 每个 API 函数对应明确入参与返回类型，不在调用方做类型断言

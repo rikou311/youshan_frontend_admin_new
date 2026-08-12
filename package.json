@@ -1,0 +1,38 @@
+{
+  "name": "youshan-frontend-admin",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "build:prod": "vue-tsc -b && vite build --mode prod",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@wangeditor/editor": "^5.1.23",
+    "@wangeditor/editor-for-vue": "^5.1.12",
+    "axios": "^1.9.0",
+    "bpmn-js": "^18.20.0",
+    "echarts": "^6.1.0",
+    "element-plus": "^2.9.11",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "jsbarcode": "^3.12.3",
+    "nprogress": "^0.2.0",
+    "pinia": "^3.0.2",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^22.15.21",
+    "@types/nprogress": "^0.2.3",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "sass": "^1.87.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vue-tsc": "^2.2.8"
+  }
+}

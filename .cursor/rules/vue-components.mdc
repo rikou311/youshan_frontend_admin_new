@@ -1,0 +1,25 @@
+---
+description: Vue 3 组件编写规范
+globs: **/*.vue
+alwaysApply: false
+---
+
+# Vue 组件规范
+
+- 使用 `<script setup lang="ts">` 与 Composition API，不写 Options API
+- 页面放 `views/`，可复用组件放 `components/`
+- 文件名与组件名使用 PascalCase（如 `UserTable.vue`）
+- Props / Emits 必须显式类型化：
+
+```vue
+<script setup lang="ts">
+interface Props {
+  userId: number
+}
+const props = defineProps<Props>()
+const emit = defineEmits<{ save: [id: number] }>()
+</script>
+```
+
+- 复杂逻辑抽到 `composables/`（`useXxx.ts`），组件只负责展示与编排
+- 列表页统一处理 loading、空态与分页状态

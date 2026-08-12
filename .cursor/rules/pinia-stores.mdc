@@ -1,0 +1,20 @@
+---
+description: Pinia 状态管理规范
+globs: stores/**/*
+alwaysApply: false
+---
+
+# Pinia 状态管理
+
+- 使用 Pinia，按域拆分 store（如 `stores/user.ts`）
+- 组件内优先用 composable 或 props，跨页面共享状态才放 store
+- 异步 action 内处理错误，不在 store 中直接操作 DOM
+- state、getters、actions 均需 TypeScript 类型定义
+
+```typescript
+export const useUserStore = defineStore('user', () => {
+  const token = ref<string>('')
+  async function login(params: LoginParams) { /* ... */ }
+  return { token, login }
+})
+```

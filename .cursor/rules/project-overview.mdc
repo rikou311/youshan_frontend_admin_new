@@ -1,0 +1,15 @@
+---
+description: Vue 3 + Element Plus 管理后台技术栈概览
+alwaysApply: true
+---
+
+# 项目概览
+
+本仓库为 **Vue 3 + Element Plus** 管理后台，专项约定见各规则文件：
+
+- 组件 → `vue-components.mdc`
+- API → `api-conventions.mdc`
+- 路由权限 → `router-permissions.mdc`
+- 状态 → `pinia-stores.mdc`
+- 样式 → `scss-styles.mdc`
+- TypeScript → `typescript-standards.mdc`

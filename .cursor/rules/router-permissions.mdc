@@ -1,0 +1,20 @@
+---
+description: 路由与权限守卫规范
+globs: router/**/*
+alwaysApply: false
+---
+
+# 路由与权限
+
+- 使用 Vue Router 4，路由按模块懒加载：`() => import('@/views/...')`
+- `meta` 声明 `title`、`permission`、`keepAlive` 等
+- 在 `router/guard.ts` 的 `beforeEach` 中统一校验登录态与权限，无权限跳转 403 或首页
+- 菜单与路由配置保持单一数据源，避免硬编码重复维护
+
+```typescript
+{
+  path: '/users',
+  component: () => import('@/views/user/index.vue'),
+  meta: { title: '用户管理', permission: 'user:list' },
+}
+```

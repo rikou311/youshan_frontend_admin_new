@@ -1,0 +1,21 @@
+---
+description: TypeScript 类型约定
+globs: "**/*.{ts,vue}"
+alwaysApply: false
+---
+
+# TypeScript 规范
+
+- 开启严格模式，避免 `any`；暂无法推断时用 `unknown` 并收窄
+- API 响应、路由 `meta`、store state 均定义 interface / type
+- 枚举业务状态用 `as const` 对象或 enum，与后端约定保持一致
+- 导入路径使用 `@/` 别名，保持与 `vite.config.ts` 一致
+
+```typescript
+// ✅ GOOD
+const STATUS = { ACTIVE: 1, DISABLED: 0 } as const
+type Status = (typeof STATUS)[keyof typeof STATUS]
+
+// ❌ BAD
+const data: any = await fetchData()
+```
