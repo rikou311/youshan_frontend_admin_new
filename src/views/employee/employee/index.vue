@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   deleteEmployee,
   getEmployeeList,
+  queryEmployee,
   type EmployeeForm,
   type EmployeeItem,
 } from '@/api/employee'
@@ -15,6 +16,7 @@ import EmployeeFormDialog from './components/EmployeeFormDialog.vue'
 const searchForm = reactive({ name: '' })
 const sortState = reactive({ prop: '', order: '' })
 const dialogVisible = ref(false)
+const dialogMode = ref<'add' | 'edit'>('edit')
 const editingRow = ref<EmployeeForm | null>(null)
 
 const { buttons } = usePageButtons()
@@ -104,8 +106,20 @@ function handleSortChange({
   void fetchList()
 }
 
-function openEdit(row: EmployeeItem) {
-  editingRow.value = { ...row }
+function openAdd() {
+  dialogMode.value = 'add'
+  editingRow.value = null
+  dialogVisible.value = true
+}
+
+async function openEdit(row: EmployeeItem) {
+  dialogMode.value = 'edit'
+  try {
+    const detail = await queryEmployee(row.id)
+    editingRow.value = { ...row, ...detail }
+  } catch {
+    editingRow.value = { ...row }
+  }
   dialogVisible.value = true
 }
 
@@ -134,6 +148,9 @@ onMounted(() => {
         />
         <el-button type="primary" @click="handleSearch">
           {{ buttons.index?.authName ?? '查询' }}
+        </el-button>
+        <el-button type="success" @click="openAdd">
+          {{ buttons.add?.authName ?? '创建员工' }}
         </el-button>
       </div>
 
@@ -197,6 +214,7 @@ onMounted(() => {
 
     <EmployeeFormDialog
       v-model:visible="dialogVisible"
+      :mode="dialogMode"
       :model="editingRow"
       @success="fetchList"
     />

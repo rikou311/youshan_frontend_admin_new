@@ -13,6 +13,7 @@ export interface EmployeeItem {
   name: string
   empId?: string
   comprefaceSubjectId?: string
+  image?: string
   basicGive?: number
   hourlyWage?: number
   rent?: string | number
@@ -31,6 +32,8 @@ export interface EmployeeForm {
   name: string
   empId?: string
   comprefaceSubjectId?: string
+  /** 创建时提交给人脸识别，data URL（data:image/...;base64,） */
+  image?: string
   basicGive?: number
   hourlyWage?: number
   rent?: string | number

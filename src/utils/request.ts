@@ -8,17 +8,50 @@ const request = axios.create({
   timeout: 20000,
 })
 
-/** 对齐旧项目：失败时展示 message : data 反馈文案 */
-function formatApiErrorTip(message?: string, data?: unknown, fallback = '请求失败') {
-  const msg = message || fallback
+const GENERIC_MESSAGES = new Set([
+  'error',
+  'ERROR',
+  '未知错误',
+  '操作失败',
+  '请求失败',
+  'fail',
+  'FAIL',
+])
+
+function stringifyErrorData(data: unknown) {
   if (data == null || data === '') {
+    return ''
+  }
+  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+    return String(data).trim()
+  }
+  if (typeof data === 'object' && 'message' in (data as Record<string, unknown>)) {
+    const nested = (data as { message?: unknown }).message
+    if (typeof nested === 'string' && nested.trim()) {
+      return nested.trim()
+    }
+  }
+  try {
+    return JSON.stringify(data)
+  } catch {
+    return ''
+  }
+}
+
+/** 后台未知错误 message 常为 ERROR/未知错误，真正提示在 data */
+function formatApiErrorTip(message?: string, data?: unknown, fallback = '请求失败') {
+  const detail = stringifyErrorData(data)
+  if (detail) {
+    return detail
+  }
+  const msg = (message || '').trim()
+  if (msg && !GENERIC_MESSAGES.has(msg)) {
     return msg
   }
-  const detail =
-    typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean'
-      ? String(data)
-      : JSON.stringify(data)
-  return `${msg} : ${detail}`
+  if (msg) {
+    return msg
+  }
+  return fallback
 }
 
 request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -77,6 +110,11 @@ request.interceptors.response.use(
     const body = error.response?.data
     const message = body?.message
     const data = body?.data
+    const tip = formatApiErrorTip(
+      message,
+      data,
+      status ? `请求失败（${status}）` : error.message || '网络异常',
+    )
 
     if (status === 401) {
       const [{ useUserStore }, { default: router }] = await Promise.all([
@@ -90,11 +128,11 @@ request.interceptors.response.use(
         query: { redirect: router.currentRoute.value.fullPath },
       })
       ElMessage.error('登录已过期，请重新登录')
-      return Promise.reject(error)
+      return Promise.reject(new Error(tip))
     }
 
-    ElMessage.error(formatApiErrorTip(message, data, error.message || '网络异常'))
-    return Promise.reject(error)
+    ElMessage.error(tip)
+    return Promise.reject(new Error(tip))
   },
 )
 

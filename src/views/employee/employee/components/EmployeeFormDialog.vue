@@ -2,14 +2,16 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { updateEmployee, type EmployeeForm } from '@/api/employee'
+import { addEmployee, updateEmployee, type EmployeeForm } from '@/api/employee'
 
 interface Props {
   visible: boolean
+  mode?: 'add' | 'edit'
   model?: EmployeeForm | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  mode: 'edit',
   model: null,
 })
 
@@ -25,6 +27,7 @@ const employeeDefault: EmployeeForm = {
   name: '',
   startDate: '',
   empId: '',
+  comprefaceSubjectId: '',
   basicGive: 0,
   hourlyWage: 0,
   rent: '',
@@ -44,10 +47,14 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  empId: [{ required: true, message: '请选择员工', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  name: [{ required: true, message: '请输入员工姓名', trigger: 'blur' }],
+  startDate: [{ required: true, message: '请选择入社日', trigger: 'change' }],
+  empId: [{ required: true, message: '请输入员工ID', trigger: 'blur' }],
   createdAt: [{ required: true, message: '请选择创建时间', trigger: 'change' }],
 }
+
+const dialogTitle = computed(() => (props.mode === 'add' ? '创建员工' : '修改员工信息'))
+const isEdit = computed(() => props.mode === 'edit')
 
 const typeChecked = computed({
   get: () => String(form.type) === '1',
@@ -73,7 +80,6 @@ function toPickerDate(value?: string | number | Date | null): Date | null {
     const date = new Date(Number(raw) * multiplier)
     return Number.isNaN(date.getTime()) ? null : date
   }
-  // 兼容 ISO / "YYYY-MM-DD HH:mm:ss" / "YYYY-MM-DD"
   const date = new Date(raw.includes('T') || raw.includes(' ') ? raw : `${raw}T00:00:00`)
   if (!Number.isNaN(date.getTime())) {
     return date
@@ -107,14 +113,27 @@ function fillForm(source: EmployeeForm | Record<string, unknown>) {
   })
 }
 
+function resetToEmpty(withNow = false) {
+  Object.assign(form, {
+    ...employeeDefault,
+    id: undefined,
+    startDate: null,
+    createdAt: withNow ? new Date() : null,
+  })
+}
+
 watch(
   () => props.visible,
   (visible) => {
     if (!visible) {
       return
     }
-    const source = props.model ? (JSON.parse(JSON.stringify(props.model)) as EmployeeForm) : {}
-    fillForm(source)
+    if (props.mode === 'add' || !props.model) {
+      resetToEmpty(true)
+      formRef.value?.clearValidate()
+      return
+    }
+    fillForm(JSON.parse(JSON.stringify(props.model)) as EmployeeForm)
   },
 )
 
@@ -122,16 +141,49 @@ function closeDialog() {
   emit('update:visible', false)
 }
 
+/** 员工ID变更时：照片ID为空或仍是 emp_ 自动值则同步（编辑时照片ID锁定，不同步） */
+function onEmpIdChange() {
+  if (isEdit.value) {
+    return
+  }
+  const empId = String(form.empId || '').trim()
+  const photoId = String(form.comprefaceSubjectId || '').trim()
+  if (!empId) {
+    return
+  }
+  if (!photoId || /^emp_/.test(photoId)) {
+    form.comprefaceSubjectId = `emp_${empId}`
+  }
+}
+
 function reset() {
   formRef.value?.resetFields()
-  if (props.model) {
+  if (props.mode === 'edit' && props.model) {
     fillForm(JSON.parse(JSON.stringify(props.model)) as EmployeeForm)
   } else {
-    Object.assign(form, {
-      ...employeeDefault,
-      startDate: null,
-      createdAt: null,
-    })
+    resetToEmpty(true)
+  }
+}
+
+function buildPayload(): EmployeeForm {
+  const photoId =
+    String(form.comprefaceSubjectId || '').trim() ||
+    (form.empId ? `emp_${form.empId}` : '')
+  return {
+    ...(props.mode === 'edit' && form.id ? { id: form.id } : {}),
+    name: form.name,
+    empId: form.empId,
+    comprefaceSubjectId: photoId,
+    basicGive: form.basicGive,
+    hourlyWage: form.hourlyWage,
+    rent: form.rent,
+    transportationExp: form.transportationExp,
+    overtime: form.overtime,
+    specialAllowance: form.specialAllowance,
+    socialSecurity: form.socialSecurity,
+    type: form.type,
+    startDate: toSaveDate(form.startDate),
+    createdAt: toSaveDate(form.createdAt),
   }
 }
 
@@ -142,25 +194,17 @@ async function handleSave() {
   }
   loading.value = true
   try {
-    await updateEmployee({
-      id: form.id,
-      name: form.name,
-      empId: form.empId,
-      basicGive: form.basicGive,
-      hourlyWage: form.hourlyWage,
-      rent: form.rent,
-      transportationExp: form.transportationExp,
-      overtime: form.overtime,
-      specialAllowance: form.specialAllowance,
-      socialSecurity: form.socialSecurity,
-      type: form.type,
-      comprefaceSubjectId: `emp_${form.empId || ''}`,
-      startDate: toSaveDate(form.startDate),
-      createdAt: toSaveDate(form.createdAt),
-    })
+    const payload = buildPayload()
+    if (props.mode === 'add') {
+      await addEmployee(payload)
+    } else {
+      await updateEmployee(payload)
+    }
     ElMessage.success('保存成功')
     emit('success')
     closeDialog()
+  } catch {
+    // 错误文案已由 request 拦截器弹出
   } finally {
     loading.value = false
   }
@@ -170,7 +214,7 @@ async function handleSave() {
 <template>
   <el-dialog
     :model-value="visible"
-    title="修改员工信息"
+    :title="dialogTitle"
     width="70%"
     top="0"
     destroy-on-close
@@ -198,7 +242,18 @@ async function handleSave() {
         />
       </el-form-item>
       <el-form-item label="员工ID" prop="empId" style="width: 80%">
-        <el-input v-model="form.empId" placeholder="请输入员工ID" />
+        <el-input
+          v-model="form.empId"
+          placeholder="请输入员工ID"
+          @change="onEmpIdChange"
+        />
+      </el-form-item>
+      <el-form-item label="照片ID" prop="comprefaceSubjectId" style="width: 80%">
+        <el-input
+          v-model="form.comprefaceSubjectId"
+          placeholder="请输入照片ID，默认 emp_员工ID"
+          :disabled="isEdit"
+        />
       </el-form-item>
       <el-form-item label="基本給" prop="basicGive" style="width: 80%">
         <el-input-number v-model="form.basicGive" placeholder="请输入基本給" style="width: 100%" />
