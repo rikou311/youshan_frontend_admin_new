@@ -18,6 +18,8 @@ export interface MerchantUserForm {
   name?: string
   wechat?: string
   memo?: string
+  /** 积分（可小数） */
+  point?: number | null
   state?: number | string
   address?: number | string
   addressList?: import('@/api/merchant/user-address').UserAddressItem[]
@@ -233,6 +235,8 @@ export interface MerchantUserOption {
   umail?: string
   wechat?: string
   address?: number
+  /** 用户可用积分 */
+  point?: number
 }
 
 export interface MerchantCommodityOption {

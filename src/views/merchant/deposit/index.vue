@@ -153,7 +153,12 @@ onMounted(async () => {
     <el-card shadow="never">
       <el-form :inline="true" @submit.prevent="handleSearch">
         <el-form-item label="商家">
-          <el-input v-model="searchForm.username" clearable placeholder="商家昵称/账号" />
+          <el-input
+            v-model="searchForm.username"
+            clearable
+            placeholder="商家昵称/账号"
+            @keyup.enter="handleSearch"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.state" clearable placeholder="全部" style="width: 140px">

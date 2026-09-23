@@ -58,7 +58,6 @@ function grandTotal(oid: number) {
       <div v-for="val in list" :key="val.oid" class="page_box">
         <div v-for="v in double ? 2 : 1" :key="v" class="deliveryreq-div">
           <div class="title">
-            <span style="font-size: 12px">【振込】</span>
             <span style="font-size: 20px">納品書</span>
             <span v-if="titleHidden" style="font-size: 12px">（兼領収書）</span>
             <span v-if="v === 2" style="font-size: 12px">（控）</span>
@@ -140,7 +139,16 @@ function grandTotal(oid: number) {
                   </thead>
                   <tbody>
                     <tr>
-                      <td style="height: 32px">¥ {{ formatMoneyJp(grandTotal(val.oid)) }}</td>
+                      <td
+                        style="
+                          height: 32px;
+                          font-size: 16px;
+                          font-weight: bold;
+                          border: 2px solid #000;
+                        "
+                      >
+                        ¥ {{ formatMoneyJp(grandTotal(val.oid)) }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>

@@ -55,6 +55,7 @@ const form = reactive<MerchantUserForm>({
   name: '',
   wechat: '',
   memo: '',
+  point: 0,
   state: '1',
   address: '',
   addressList: [],
@@ -79,6 +80,22 @@ const rules: FormRules = {
       trigger: 'blur',
     },
   ],
+  point: [
+    {
+      validator: (_rule, value, callback) => {
+        if (value === undefined || value === null || value === '') {
+          callback()
+          return
+        }
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          callback()
+          return
+        }
+        callback(new Error('积分只能输入数字'))
+      },
+      trigger: 'blur',
+    },
+  ],
   state: [{ required: true, message: '请选择状态', trigger: 'change' }],
 }
 
@@ -93,6 +110,7 @@ function createEmptyForm(): MerchantUserForm {
     name: '',
     wechat: '',
     memo: '',
+    point: 0,
     state: '1',
     address: '',
     addressList: [],
@@ -133,6 +151,7 @@ watch(
         name: props.model.name ?? '',
         wechat: props.model.wechat ?? '',
         memo: props.model.memo ?? '',
+        point: Number(props.model.point ?? 0),
         state: props.model.state != null ? String(props.model.state) : '1',
         address: props.model.address ?? '',
         addressList: [],
@@ -292,6 +311,15 @@ async function handleSubmit() {
       </el-form-item>
       <el-form-item label="微信">
         <el-input v-model="form.wechat" />
+      </el-form-item>
+      <el-form-item label="积分" prop="point">
+        <el-input-number
+          v-model="form.point"
+          :precision="2"
+          :step="0.01"
+          :controls="true"
+          style="width: 100%"
+        />
       </el-form-item>
       <el-form-item label="备注">
         <el-input v-model="form.memo" type="textarea" :rows="2" />

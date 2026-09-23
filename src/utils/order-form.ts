@@ -47,6 +47,8 @@ export interface OrderCreateForm {
   totald?: number
   taxtotal?: number
   taxState?: number
+  /** 本单使用的积分（从用户积分带出，由勾选控制是否使用） */
+  point?: number
   totalJp: number
   rate?: number
   pointState?: number
@@ -62,7 +64,8 @@ export interface OrderCreateForm {
   authenappendip?: string
   authenappendua?: string
   authenappendoperator?: string
-  authenappend?: string
+  /** 下单时间：秒/毫秒时间戳或字符串 */
+  authenappend?: string | number
   authenappendaddress?: string
   authenappendlocation?: string
   authenmodifyip?: string
@@ -112,6 +115,7 @@ export function createEmptyOrderForm(): OrderCreateForm {
     taxtotal: 0,
     rate: 0,
     taxState: 0,
+    point: 0,
     pointState: 1,
     saleStatState: 0,
     orderlist: [],
@@ -169,7 +173,8 @@ export function recalcOrderTotals(form: OrderCreateForm, includeLc = true, inclu
       Number(includeTax ? form.taxtotal || 0 : 0) +
       Number(form.yf || 0) +
       Number(form.ld || 0) +
-      (includeLc ? Number(form.lc || 0) : 0)
+      (includeLc ? Number(form.lc || 0) : 0) -
+      Number(form.point || 0)
     ).toFixed(2),
   )
 }
@@ -305,6 +310,11 @@ export function prepareOrderUpdatePayload(
   const preserved: Record<string, unknown> = {}
   if (baseOrder) {
     auditKeys.forEach((key) => {
+      const formVal = formPayload[key]
+      // 表单已填非空值时保留表单（如下单时间可改），空串不覆盖原单
+      if (formVal !== undefined && formVal !== null && formVal !== '') {
+        return
+      }
       if (baseOrder[key] !== undefined && baseOrder[key] !== null) {
         preserved[key] = baseOrder[key]
       }

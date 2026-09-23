@@ -175,7 +175,16 @@ function balanceTotal(uid: number) {
                     </thead>
                     <tbody>
                       <tr>
-                        <td style="height: 32px">¥ {{ formatMoneyJp(balanceTotal(val.id)) }}</td>
+                        <td
+                          style="
+                            height: 32px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            border: 2px solid #000;
+                          "
+                        >
+                          ¥ {{ formatMoneyJp(balanceTotal(val.id)) }}
+                        </td>
                       </tr>
                     </tbody>
                   </table>

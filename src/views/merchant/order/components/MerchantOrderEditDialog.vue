@@ -6,11 +6,7 @@ import { lookupPostcodeByPostcode } from '@/api/common/postcode'
 import { searchFares } from '@/api/configure'
 import { queryDictionaryGroups } from '@/api/dictionary'
 import { updateMerchantOrder } from '@/api/merchant'
-import {
-  formatMerchantAddress,
-  formatOrderTimestamp,
-  merchantOrderDataToLines,
-} from '@/utils/merchant-order'
+import { formatMerchantAddress, merchantOrderDataToLines } from '@/utils/merchant-order'
 import {
   formatMerchantOrderAddressApply,
   formatMerchantOrderAddressLabel,
@@ -95,8 +91,40 @@ const form = reactive({
   taxState: 0,
   total: 0,
   totalJp: 0,
+  authenappend: '' as string | number,
   orderlist: [] as OrderFormLine[],
 })
+
+/** 下单时间选择器（Date）；保存时再转回时间戳 */
+const authenappendDate = ref<Date | null>(null)
+
+function timestampToPickerDate(value?: string | number | null): Date | null {
+  if (value === undefined || value === null || value === '') {
+    return null
+  }
+  const raw = String(value).trim()
+  if (!raw) {
+    return null
+  }
+  if (/^\d+$/.test(raw)) {
+    const date = new Date(raw.length > 10 ? Number(raw) : Number(raw) * 1000)
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const date = new Date(raw.includes('T') || raw.includes(' ') ? raw : `${raw}T00:00:00`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+/** 与原单精度一致：原为毫秒则存毫秒，否则存秒 */
+function pickerDateToTimestamp(date: Date | null, original?: string | number | null) {
+  if (!date || Number.isNaN(date.getTime())) {
+    return ''
+  }
+  const raw = String(original ?? '').trim()
+  if (raw && /^\d+$/.test(raw) && raw.length > 10) {
+    return String(date.getTime())
+  }
+  return String(Math.floor(date.getTime() / 1000))
+}
 
 const taxStateChecked = computed({
   get: () => form.taxState === 0,
@@ -140,6 +168,8 @@ function resetFormFromOrder(order: MerchantOrderDetail) {
   form.ld = Number(order.ld ?? 0)
   form.taxtotal = Number(order.taxtotal ?? 0)
   form.taxState = order.taxState ?? 0
+  form.authenappend = order.authenappend ?? ''
+  authenappendDate.value = timestampToPickerDate(order.authenappend)
   form.orderlist =
     order.orderlist?.length
       ? order.orderlist.map((line) => ({
@@ -337,6 +367,7 @@ async function handleSave() {
   await ElMessageBox.confirm('确定要保存订单修改吗？', '保存', { type: 'warning' })
   loading.value = true
   try {
+    form.authenappend = pickerDateToTimestamp(authenappendDate.value, props.order?.authenappend)
     const operator = userStore.userInfo?.username ?? 'admin'
     const payload = prepareOrderUpdatePayload(form.id, form, operator, {
       includeLc: false,
@@ -411,7 +442,13 @@ async function handleSave() {
             </el-col>
             <el-col :span="12">
               <el-form-item label="下单时间">
-                {{ formatOrderTimestamp(order?.authenappend) }}
+                <el-date-picker
+                  v-model="authenappendDate"
+                  type="datetime"
+                  placeholder="请选择下单时间"
+                  format="YYYY-MM-DD HH:mm:ss"
+                  style="width: 100%"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -553,17 +590,17 @@ async function handleSave() {
           <el-row :gutter="16" class="merchant-order-edit__fees">
             <el-col :span="8">
               <el-form-item label="运费">
-                <el-input-number v-model="form.yf" :min="0" style="width: 100%" />
+                <el-input-number v-model="form.yf" style="width: 100%" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="货到付款费">
-                <el-input-number v-model="form.svf" :min="0" style="width: 100%" />
+                <el-input-number v-model="form.svf" style="width: 100%" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="冷冻运费">
-                <el-input-number v-model="form.ld" :min="0" style="width: 100%" />
+                <el-input-number v-model="form.ld" style="width: 100%" />
               </el-form-item>
             </el-col>
           </el-row>

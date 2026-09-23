@@ -52,6 +52,10 @@ const userOptions = ref<MerchantUserOption[]>([])
 const userAddressList = ref<MerchantUserAddressItem[]>([])
 const selectedUnameId = ref<number | string | ''>('')
 const selectedUcodeId = ref<number | string | ''>('')
+/** 所选用户当前可用积分 */
+const availablePoint = ref(0)
+/** 是否使用积分抵扣本单 */
+const usePoint = ref(false)
 const codeChangeTimer = ref<ReturnType<typeof setTimeout>>()
 const fareList = ref<Awaited<ReturnType<typeof searchFares>>>([])
 const codeInputRefs = new Map<number, { focus: () => void }>()
@@ -119,7 +123,36 @@ function ensureEmptyCodeRow() {
 }
 
 function changeFee() {
+  form.pointState = usePoint.value ? 0 : 1
+  // 先按 0 积分算订单总额，再把可用积分封顶到不超过该总额
+  form.point = 0
   recalcOrderTotals(form, false, true)
+  if (usePoint.value) {
+    const orderAmount = Number(
+      (
+        Number(form.svf || 0) +
+        Number(form.total || 0) +
+        Number(form.taxtotal || 0) +
+        Number(form.yf || 0) +
+        Number(form.ld || 0)
+      ).toFixed(2),
+    )
+    form.point = Math.min(Number(availablePoint.value || 0), Math.max(0, orderAmount))
+    recalcOrderTotals(form, false, true)
+  }
+}
+
+function syncOrderPoint() {
+  changeFee()
+}
+
+function applyUserPoint(user?: MerchantUserOption | null) {
+  availablePoint.value = Number(user?.point ?? 0)
+  syncOrderPoint()
+}
+
+function onUsePointChange() {
+  syncOrderPoint()
 }
 
 function changePay() {
@@ -186,6 +219,8 @@ function resetFormState() {
   userAddressList.value = []
   selectedUnameId.value = ''
   selectedUcodeId.value = ''
+  availablePoint.value = 0
+  usePoint.value = false
   formRef.value?.clearValidate()
 }
 
@@ -251,6 +286,18 @@ watch(
           selectedUnameId.value = detail.uid
           selectedUcodeId.value = detail.uid
           await loadUserAddresses({ id: detail.uid, uname: detail.uname ?? '' }, false)
+          if (detail.uname) {
+            try {
+              const users = await searchMerchantUserByUname(detail.uname)
+              const matched = users.find((item) => item.id === detail.uid) ?? users[0]
+              if (matched) {
+                userOptions.value = [matched]
+                applyUserPoint(matched)
+              }
+            } catch {
+              applyUserPoint(null)
+            }
+          }
         }
         ensureEmptyCodeRow()
         makeData()
@@ -347,12 +394,14 @@ async function unameChange(userId: number | string | '') {
     selectedUnameId.value = ''
     selectedUcodeId.value = ''
     userAddressList.value = []
+    applyUserPoint(null)
     return
   }
   if (typeof userId === 'string' && Number.isNaN(Number(userId))) {
     form.uname = userId
     form.uid = 0
     selectedUnameId.value = ''
+    applyUserPoint(null)
     return
   }
   const id = Number(userId)
@@ -370,6 +419,7 @@ async function unameChange(userId: number | string | '') {
   form.phone = user.phone ?? ''
   form.uname = user.uname
   form.ucode = user.ucode ?? ''
+  applyUserPoint(user)
   await loadUserAddresses(user, true)
 }
 
@@ -812,6 +862,20 @@ onUnmounted(() => {
           含税
         </el-checkbox>
       </el-form-item>
+      <el-form-item label="积分" style="width: 50%">
+        -{{ formatMoneyJp(form.point) }}
+        <el-checkbox
+          v-model="usePoint"
+          style="margin-left: 12px"
+          :disabled="!availablePoint"
+          @change="onUsePointChange"
+        >
+          使用积分
+        </el-checkbox>
+        <span v-if="availablePoint" class="point-available">
+          （可用 {{ formatMoneyJp(availablePoint) }}）
+        </span>
+      </el-form-item>
       <el-form-item label="订单总金额" style="width: 50%">
         {{ formatMoneyJp(form.totalJp) }}
       </el-form-item>
@@ -850,5 +914,11 @@ onUnmounted(() => {
       width: 100%;
     }
   }
+}
+
+.point-available {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 </style>
