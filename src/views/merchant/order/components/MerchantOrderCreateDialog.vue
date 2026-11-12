@@ -809,7 +809,6 @@ onUnmounted(() => {
                 :key="row.pid"
                 v-model="row.count"
                 :max="row.stock ?? 9999"
-                :min="0"
                 size="small"
                 :controls="false"
                 @change="onCountChange"

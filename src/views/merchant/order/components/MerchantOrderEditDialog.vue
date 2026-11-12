@@ -560,7 +560,6 @@ async function handleSave() {
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.count"
-                  :min="1"
                   size="small"
                   controls-position="right"
                   @change="onLineChange(row)"
