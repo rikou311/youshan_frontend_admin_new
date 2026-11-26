@@ -247,6 +247,13 @@
     width: 100px;
     text-align: center;
   }
+  .products tbody .memo {
+    display: inline-block;
+    max-width: 96px;
+    font-size: 10px;
+    line-height: 1.2;
+    word-break: break-all;
+  }
   .products .orderid {
     width: 60px;
     text-align: end;
@@ -533,6 +540,13 @@
     .products .date {
       width: 100px;
       text-align: center;
+    }
+    .products tbody .memo {
+      display: inline-block;
+      max-width: 96px;
+      font-size: 10px;
+      line-height: 1.2;
+      word-break: break-all;
     }
     .products .orderid {
       width: 80px;

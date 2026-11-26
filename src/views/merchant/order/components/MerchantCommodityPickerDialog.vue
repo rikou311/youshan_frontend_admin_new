@@ -87,7 +87,7 @@ watch(
 )
 
 function onCountChange(row: MerchantCommodityPickerItem & { addCount: number }) {
-  if (row.addCount > 0) {
+  if (row.addCount !== 0 && row.addCount != null) {
     cart.value[row.id] = {
       id: row.id,
       title: row.title,
@@ -113,7 +113,7 @@ function closeDialog() {
 }
 
 async function handleConfirm() {
-  const items = Object.values(cart.value).filter((item) => item.addCount > 0)
+  const items = Object.values(cart.value).filter((item) => item.addCount !== 0)
   if (!items.length) {
     ElMessage.warning('请先选择商品数量')
     return
@@ -186,14 +186,11 @@ async function handleConfirm() {
       <el-table-column label="数量" width="160">
         <template #default="{ row }">
           <el-input-number
-            v-if="row.total > 0"
             v-model="row.addCount"
-            :min="0"
             :max="row.total"
             size="small"
             @change="onCountChange(row)"
           />
-          <span v-else class="merchant-commodity-picker__empty">无库存</span>
         </template>
       </el-table-column>
     </el-table>

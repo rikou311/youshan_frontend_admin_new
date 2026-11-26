@@ -213,6 +213,10 @@ function balanceTotal(uid: number) {
                   >
                     <td v-if="row.showDate" class="center" :rowspan="row.dateRowspan">
                       {{ formatTimestampJp(row.time) }}
+                      <template v-if="row.memo">
+                        <br />
+                        <span class="memo">(备注：{{ row.memo }})</span>
+                      </template>
                     </td>
                     <td v-if="row.showOrderId" class="center" :rowspan="row.orderIdRowspan">
                       {{ row.orderId }}

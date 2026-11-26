@@ -14,6 +14,8 @@ export interface PrintProductLine {
   home?: string
   time?: string | number
   pay?: number | string
+  /** 订单备注（請求书日付列展示） */
+  memo?: string
 }
 
 export interface DeliveryPrintItem {
@@ -243,6 +245,7 @@ export function buildRequestPrintState(
       Object.values(dt).forEach((line) => {
         line.time = order.authenappend
         line.pay = order.pay
+        line.memo = order.memo ?? ''
       })
 
       const totalMoney = { ...(state.totalList[uid] ?? {}) }
@@ -424,6 +427,21 @@ export function truncatePrintTitle(title?: string) {
     return title
   }
   return `${title.substring(0, 18)}...`
+}
+
+/** 請求书日付列备注截断（列宽约 100px） */
+export function truncatePrintMemo(memo?: string, maxLen = 12) {
+  if (!memo) {
+    return ''
+  }
+  const text = String(memo).trim()
+  if (!text) {
+    return ''
+  }
+  if (text.length <= maxLen) {
+    return text
+  }
+  return `${text.substring(0, maxLen)}...`
 }
 
 export function buildDeliveryRequisitionPayload(

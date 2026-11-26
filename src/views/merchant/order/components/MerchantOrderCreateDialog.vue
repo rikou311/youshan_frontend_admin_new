@@ -834,7 +834,6 @@ onUnmounted(() => {
       <el-form-item label="运费" style="width: 50%">
         <el-input-number
           v-model="form.yf"
-          :min="0"
           placeholder="运费"
           :controls="false"
           @change="changeFee"
